@@ -2,13 +2,29 @@
 
 Houzz Curl!
 
+Be sure to set these environment variables in your shell:
 ```
-❯ hurl -h
-Usage of hurl:
-  -b    Whether to print the final response body to stdout
-  -c string
-        Set a cookie in the format 'name=value'. Defaults to 'jkdebug=value' if '=' is missing.
-  -d    Display only specific headers
+STG_HOUZZ_USER
+STG_HOUZZ_PASS
+```
+
+# Usage
+
+```
+NAME:
+   hurl - Curl substitute for stghouzz routing and testing
+
+USAGE:
+   EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   -d          Display only specific headers
+   -c value    Set a cookie in the format 'name=value'. Defaults to 'jkdebug=value' if '=' is missing.
+   -b          Whether to print the final response body to stdout
+   --help, -h  show help
 
 ---
 
