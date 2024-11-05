@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/urfave/cli"
 )
 
 const (
@@ -19,71 +20,99 @@ const (
 	resetColor     = "\033[0m"
 )
 
-var (
-	displayOnly bool
-	cookie      string
-	printBody   bool
-)
-
 func main() {
-	flag.BoolVar(&displayOnly, "d", false, "Display only specific headers")
-	flag.StringVar(&cookie, "c", "", "Set a cookie in the format 'name=value'. Defaults to 'jkdebug=value' if '=' is missing.")
-	flag.BoolVar(&printBody, "b", false, "Whether to print the final response body to stdout")
+	app := &cli.App{
+		Name:      "hurl",
+		Usage:     "Curl substitute for stghouzz routing and testing",
+		UsageText: "EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "d",
+				Usage: "Display only specific headers",
+			},
+			&cli.StringFlag{
+				Name:  "c",
+				Usage: "Set a cookie in the format 'name=value'. Defaults to 'jkdebug=value' if '=' is missing.",
+			},
+			&cli.BoolFlag{
+				Name:  "b",
+				Usage: "Whether to print the final response body to stdout",
+			},
+		},
+		Action: func(c *cli.Context) error {
 
-	flag.Parse()
-	url := flag.Arg(0)
-
-	if url == "" {
-		fmt.Println("Usage: hurl [-d] [-cookie=<value>] <URL>")
-		os.Exit(1)
-	}
-
-	displayHeaders := strings.Split(getEnv("DISPLAY_HEADERS", defaultHeaders), " ")
-
-	client := &http.Client{
-		Timeout: 15 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// Add jkdebug cookie for each redirect if provided
-			// if *cookie != "" {
-			// 	req.AddCookie(&http.Cookie{Name: "jkdebug", Value: *cookie})
-			// }
-			if req.Response != nil {
-				printHeaders(req.Response, displayHeaders, displayOnly)
+			url := c.Args().First()
+			if url == "" {
+				_ = cli.ShowAppHelp(c)
+				fmt.Println()
+				return fmt.Errorf("arg 1 required: no URL provided")
 			}
+
+			cookie := c.String("c")
+			if cookie != "" {
+				if strings.Contains(cookie, "=") {
+					fmt.Printf("Using cookie: %s\n", cookie)
+				} else {
+					cookie = fmt.Sprintf("jkdebug=%s", cookie)
+					fmt.Printf("Using default cookie: %s\n", cookie)
+				}
+			}
+
+			displayOnly := c.Bool("d")
+			printBody := c.Bool("b")
+
+			displayHeaders := strings.Split(getEnv("DISPLAY_HEADERS", defaultHeaders), " ")
+
+			client := &http.Client{
+				Timeout: 15 * time.Second,
+				CheckRedirect: func(req *http.Request, via []*http.Request) error {
+					// Add jkdebug cookie for each redirect if provided
+					// if *cookie != "" {
+					// 	req.AddCookie(&http.Cookie{Name: "jkdebug", Value: *cookie})
+					// }
+					if req.Response != nil {
+						printHeaders(req.Response, displayHeaders, displayOnly)
+					}
+					return nil
+				},
+			}
+
+			req, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				return err
+			}
+
+			user, pass := os.Getenv("STG_HOUZZ_USER"), os.Getenv("STG_HOUZZ_PASS")
+			if user != "" && pass != "" {
+				req.SetBasicAuth(user, pass)
+			}
+
+			setCookie(cookie, req)
+
+			resp, err := client.Do(req)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			printHeaders(resp, displayHeaders, displayOnly)
+
+			if printBody {
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					log.Fatal(err.Error())
+				}
+				fmt.Println("\n", strings.TrimSpace(string(body)))
+			}
+
 			return nil
 		},
 	}
 
-	// Create the initial request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return
-	}
-
-	// Add Basic Auth if environment variables are set
-	user, pass := os.Getenv("STG_HOUZZ_USER"), os.Getenv("STG_HOUZZ_PASS")
-	if user != "" && pass != "" {
-		req.SetBasicAuth(user, pass)
-	}
-
-	setCookie(cookie, req)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error making request:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	printHeaders(resp, displayHeaders, displayOnly)
-
-	if printBody {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		fmt.Println("\n", strings.TrimSpace(string(body)))
+	// Run the application
+	if err := app.Run(os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
