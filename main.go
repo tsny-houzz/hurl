@@ -67,16 +67,19 @@ func main() {
 				Timeout: 15 * time.Second,
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
 					// Add jkdebug cookie for each redirect if provided
-					// if *cookie != "" {
-					// 	req.AddCookie(&http.Cookie{Name: "jkdebug", Value: *cookie})
-					// }
+					setCookie(cookie, req)
 					if req.Response != nil {
 						printHeaders(req.Response, displayHeaders, displayOnly)
+					} else {
+						println("warn: redirect had no response")
 					}
 					return nil
 				},
 			}
 
+			if !strings.HasPrefix(url, "http") {
+				url = "http://" + url
+			}
 			req, err := http.NewRequest("GET", url, nil)
 			if err != nil {
 				return err

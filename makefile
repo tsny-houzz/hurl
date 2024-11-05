@@ -1,6 +1,3 @@
-# Makefile for building a macOS binary
-
-# Variables
 APP_NAME = hurl
 VERSION = 0.1.0
 BUILD_DIR = build
