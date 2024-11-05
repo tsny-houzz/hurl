@@ -6,7 +6,7 @@ VERSION = 0.1.0
 BUILD_DIR = build
 SRC_DIR = .
 GO_FILES = $(wildcard $(SRC_DIR)/*.go)
-BINARY = $(BUILD_DIR)/$(APP_NAME)
+BINARY = $(BUILD_DIR)/$(APP_NAME)-macOS
 
 # Go build settings
 GOFLAGS = GOOS=darwin GOARCH=amd64
