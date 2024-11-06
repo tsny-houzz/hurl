@@ -17,6 +17,9 @@ NAME:
 USAGE:
    EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms
 
+DESCRIPTION:
+   Basic auth is handled by env vars STG_HOUZZ_USER and STG_HOUZZ_PASS
+
 COMMANDS:
    help, h  Shows a list of commands or help for one command
 
@@ -24,6 +27,8 @@ GLOBAL OPTIONS:
    -d          Display only specific headers
    -c value    Set a cookie in the format 'name=value'. Defaults to 'jkdebug=value' if '=' is missing.
    -b          Whether to print the final response body to stdout
+   -v          Verbose
+   --no-auth   Don't use basic auth with env vars: STG_HOUZZ_USER and STG_HOUZZ_PASS
    --help, -h  show help
 
 ---
