@@ -20,11 +20,14 @@ const (
 	resetColor     = "\033[0m"
 )
 
+var verbose bool
+
 func main() {
 	app := &cli.App{
-		Name:      "hurl",
-		Usage:     "Curl substitute for stghouzz routing and testing",
-		UsageText: "EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms",
+		Name:        "hurl",
+		Description: "Basic auth is handled by env vars STG_HOUZZ_USER and STG_HOUZZ_PASS",
+		Usage:       "Curl substitute for stghouzz routing and testing",
+		UsageText:   "EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "d",
@@ -38,6 +41,14 @@ func main() {
 				Name:  "b",
 				Usage: "Whether to print the final response body to stdout",
 			},
+			&cli.BoolFlag{
+				Name:  "v",
+				Usage: "Verbose",
+			},
+			&cli.BoolFlag{
+				Name:  "no-auth",
+				Usage: "Don't use basic auth with env vars: STG_HOUZZ_USER and STG_HOUZZ_PASS",
+			},
 		},
 		Action: func(c *cli.Context) error {
 
@@ -50,9 +61,7 @@ func main() {
 
 			cookie := c.String("c")
 			if cookie != "" {
-				if strings.Contains(cookie, "=") {
-					fmt.Printf("Using cookie: %s\n", cookie)
-				} else {
+				if !strings.Contains(cookie, "=") {
 					cookie = fmt.Sprintf("jkdebug=%s", cookie)
 					fmt.Printf("Using default cookie: %s\n", cookie)
 				}
@@ -60,6 +69,7 @@ func main() {
 
 			displayOnly := c.Bool("d")
 			printBody := c.Bool("b")
+			verbose = c.Bool("v")
 
 			displayHeaders := strings.Split(getEnv("DISPLAY_HEADERS", defaultHeaders), " ")
 
@@ -132,9 +142,12 @@ func setCookie(c string, req *http.Request) {
 		cookieName = "jkdebug"
 		cookieValue = c
 	}
+	// Don't set if already set
+	if req.Header.Get(cookieName) != "" {
+		return
+	}
 
 	cookie := &http.Cookie{Name: cookieName, Value: cookieValue}
-	fmt.Printf("> %v=%v\n", cookieName, cookieValue)
 	req.AddCookie(cookie)
 }
 
@@ -155,18 +168,24 @@ func sortHeaders(headers http.Header) http.Header {
 }
 
 // printHeaders displays headers, highlighting specified ones if needed.
-func printHeaders(resp *http.Response, displayHeaders []string, displayOnly bool) {
+func printHeaders(resp *http.Response, displayHeaders []string, displayOnlyDesiredHeaders bool) {
 	var highlightedOutput bytes.Buffer
 	var normalOutput bytes.Buffer
 
 	fmt.Println()
-	fmt.Println(">", resp.Request.URL)
+	fmt.Println("+", resp.Request.URL)
 	fmt.Println("-", resp.Request.URL.Scheme, resp.Status)
 	headers := sortHeaders(resp.Header)
 
+	if verbose {
+		for _, v := range resp.Request.Header {
+			fmt.Println(">", v)
+		}
+	}
+
 	for key, values := range headers {
-		line := fmt.Sprintf("%s: %s\n", key, strings.Join(values, ", "))
-		if displayOnly {
+		line := fmt.Sprintf("< %s: %s\n", key, strings.Join(values, ", "))
+		if displayOnlyDesiredHeaders {
 			// Display only specific headers if -d is set
 			if containsIgnoreCase(displayHeaders, key) {
 				highlightedOutput.WriteString(highlight(line))
@@ -181,9 +200,14 @@ func printHeaders(resp *http.Response, displayHeaders []string, displayOnly bool
 		}
 	}
 
-	// Print highlighted headers first, then normal headers
-	fmt.Print(highlightedOutput.String())
-	fmt.Print(normalOutput.String())
+	out := strings.TrimSpace(highlightedOutput.String())
+	if out != "" {
+		fmt.Println(out)
+	}
+	out = strings.TrimSpace(normalOutput.String())
+	if out != "" {
+		fmt.Println(out)
+	}
 }
 
 // highlight adds color to a header line.
