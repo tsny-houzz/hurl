@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -117,7 +118,15 @@ func main() {
 				if err != nil {
 					log.Fatal(err.Error())
 				}
-				fmt.Println("\n", strings.TrimSpace(string(body)))
+				if strings.HasPrefix(resp.Header.Get("Content-Type"), "application/json") {
+					var prettyJSON bytes.Buffer
+					if err := json.Indent(&prettyJSON, body, "", "  "); err != nil {
+						log.Fatal("Failed to parse JSON: ", err)
+					}
+					fmt.Println("\n", prettyJSON.String())
+				} else {
+					fmt.Println("\n", strings.TrimSpace(string(body)))
+				}
 			}
 
 			return nil
