@@ -29,6 +29,7 @@ GLOBAL OPTIONS:
    -b          Whether to print the final response body to stdout
    -v          Verbose
    --no-auth   Don't use basic auth with env vars: STG_HOUZZ_USER and STG_HOUZZ_PASS
+   --mc        Mimic chrome with apple webkit headers
    --help, -h  show help
 
 ---
