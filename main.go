@@ -50,6 +50,10 @@ func main() {
 				Name:  "no-auth",
 				Usage: "Don't use basic auth with env vars: STG_HOUZZ_USER and STG_HOUZZ_PASS",
 			},
+			&cli.BoolFlag{
+				Name:  "mc",
+				Usage: "Mimic chrome with apple webkit headers",
+			},
 		},
 		Action: func(c *cli.Context) error {
 
@@ -72,7 +76,7 @@ func main() {
 			printBody := c.Bool("b")
 			verbose = c.Bool("v")
 
-			displayHeaders := strings.Split(getEnv("DISPLAY_HEADERS", defaultHeaders), " ")
+			headers := strings.Split(getEnv("DISPLAY_HEADERS", defaultHeaders), " ")
 
 			client := &http.Client{
 				Timeout: 15 * time.Second,
@@ -80,7 +84,7 @@ func main() {
 					// Add jkdebug cookie for each redirect if provided
 					setCookie(cookie, req)
 					if req.Response != nil {
-						printHeaders(req.Response, displayHeaders, displayOnly)
+						printHeaders(req.Response, headers, displayOnly)
 					} else {
 						println("warn: redirect had no response")
 					}
@@ -103,6 +107,11 @@ func main() {
 				}
 			}
 
+			if c.Bool("mc") {
+				agent := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+				req.Header.Set("User-Agent", agent)
+			}
+
 			setCookie(cookie, req)
 
 			resp, err := client.Do(req)
@@ -111,7 +120,7 @@ func main() {
 			}
 			defer resp.Body.Close()
 
-			printHeaders(resp, displayHeaders, displayOnly)
+			printHeaders(resp, headers, displayOnly)
 
 			if printBody {
 				body, err := io.ReadAll(resp.Body)
