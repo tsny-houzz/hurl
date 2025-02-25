@@ -81,10 +81,9 @@ func main() {
 			client := &http.Client{
 				Timeout: 15 * time.Second,
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
-					// Add jkdebug cookie for each redirect if provided
-					setCookie(cookie, req)
 					if req.Response != nil {
-						printHeaders(req.Response, headers, displayOnly)
+						printResponse(req.Response, headers, displayOnly)
+						fmt.Printf("\n%v\n", strings.Repeat("-", 122))
 					} else {
 						println("warn: redirect had no response")
 					}
@@ -120,7 +119,7 @@ func main() {
 			}
 			defer resp.Body.Close()
 
-			printHeaders(resp, headers, displayOnly)
+			printResponse(resp, headers, displayOnly)
 
 			if printBody {
 				body, err := io.ReadAll(resp.Body)
@@ -153,22 +152,29 @@ func setCookie(c string, req *http.Request) {
 	if c == "" {
 		return
 	}
+
 	var cookieName, cookieValue string
 	if strings.Contains(c, "=") {
-		parts := strings.SplitN(c, "=", 2)
-		cookieName = parts[0]
-		cookieValue = parts[1]
+		first, second, found := strings.Cut(c, "=")
+		if !found {
+			log.Fatalf("error: %v: invalid cookie format", c)
+		}
+		cookieName = first
+		cookieValue = second
 	} else {
 		cookieName = "jkdebug"
 		cookieValue = c
 	}
-	// Don't set if already set
-	if req.Header.Get(cookieName) != "" {
-		return
+
+	// Check if the cookie is already set
+	for _, cookie := range req.Cookies() {
+		if cookie.Name == cookieName {
+			return
+		}
 	}
 
-	cookie := &http.Cookie{Name: cookieName, Value: cookieValue}
-	req.AddCookie(cookie)
+	// Add the encoded cookie
+	req.AddCookie(&http.Cookie{Name: cookieName, Value: cookieValue})
 }
 
 func sortHeaders(headers http.Header) http.Header {
@@ -187,24 +193,31 @@ func sortHeaders(headers http.Header) http.Header {
 	// headers = sortedHeaders // Uncomment if you want to reassign
 }
 
-// printHeaders displays headers, highlighting specified ones if needed.
-func printHeaders(resp *http.Response, displayHeaders []string, displayOnlyDesiredHeaders bool) {
+// printResponse displays headers + more, highlighting specified ones if needed.
+func printResponse(resp *http.Response, displayHeaders []string, displayOnlyDesiredHeaders bool) {
 	var highlightedOutput bytes.Buffer
 	var normalOutput bytes.Buffer
 
 	fmt.Println()
 	fmt.Println("+", resp.Request.URL)
-	fmt.Println("-", resp.Request.URL.Scheme, resp.Status)
+	emoji := "✅"
+	if resp.StatusCode == 404 {
+		emoji = "⚠️"
+	}
+	if resp.StatusCode > 404 {
+		emoji = "🟥"
+	}
+	fmt.Println("-", resp.Request.URL.Scheme, resp.Status, emoji)
 	headers := sortHeaders(resp.Header)
 
 	if verbose {
-		for _, v := range resp.Request.Header {
-			fmt.Println(">", v)
+		for k, v := range resp.Request.Header {
+			fmt.Println("> H:", k, v)
 		}
 	}
 
 	for key, values := range headers {
-		line := fmt.Sprintf("< %s: %s\n", key, strings.Join(values, ", "))
+		line := fmt.Sprintf("< H: %s: %s\n", key, strings.Join(values, ", "))
 		if displayOnlyDesiredHeaders {
 			// Display only specific headers if -d is set
 			if containsIgnoreCase(displayHeaders, key) {
