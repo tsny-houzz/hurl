@@ -52,7 +52,7 @@ func main() {
 			},
 			&cli.BoolFlag{
 				Name:  "mc",
-				Usage: "Mimic chrome with apple webkit headers",
+				Usage: "Mimic a browser user-agent",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -83,7 +83,7 @@ func main() {
 				CheckRedirect: func(req *http.Request, via []*http.Request) error {
 					if req.Response != nil {
 						printResponse(req.Response, headers, displayOnly)
-						fmt.Printf("\n%v\n", strings.Repeat("-", 122))
+						fmt.Printf("\n <%v>\n", strings.Repeat("-", 122))
 					} else {
 						println("warn: redirect had no response")
 					}
