@@ -26,8 +26,8 @@ var verbose bool
 func main() {
 	app := &cli.App{
 		Name:        "hurl",
-		Description: "Basic auth is handled by env vars STG_HOUZZ_USER and STG_HOUZZ_PASS",
-		Usage:       "Curl substitute for stghouzz routing and testing",
+		Description: "stghouzz requires basic http auth, this app handles those via env vars STG_HOUZZ_USER and STG_HOUZZ_PASS",
+		Usage:       "(houzz-curl) Curl substitute for stghouzz routing and testing",
 		UsageText:   "EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -85,7 +85,7 @@ func main() {
 						printResponse(req.Response, headers, displayOnly)
 						fmt.Printf("\n <%v>\n", strings.Repeat("-", 122))
 					} else {
-						println("warn: redirect had no response")
+						fmt.Printf("warn: %v: redirect had no response\n", req.URL.String())
 					}
 					return nil
 				},

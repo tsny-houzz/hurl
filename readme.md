@@ -33,16 +33,19 @@ GLOBAL OPTIONS:
    --help, -h  show help
 
 ---
-
 ❯ hurl -d -c jeff2610 https://www.stghouzz.com/learn/blog/free-fence-contract-template
-> jkdebug: jeff2610
+Using default cookie: jkdebug=jeff2610
 
-> https://www.stghouzz.com/learn/blog/free-fence-contract-template
-- https 302 Found
-Hz-Serverid: prismic-cms-debug-jeff2610-6d696bbc56-jd67t
-Location: https://www.stghouzz.com/pro-learn/blog/free-fence-contract-template
++ https://www.stghouzz.com/learn/blog/free-fence-contract-template
+- https 404 Not Found ⚠️
+< H: Hz-Serverid: jukwaa-main-master20250226064643033be368c4-5777dfbc57-kdw9f
 
-> https://www.stghouzz.com/pro-learn/blog/free-fence-contract-template
-- https 404 Not Found
-Hz-Serverid: jukwaa-main-master20241105073610b3a0a11e9e-7ffd5fb894-wrtss
+---
+
+❯ hurl -d https://www.stghouzz.com/products/furniture\?page\=new
+
++ https://www.stghouzz.com/products/furniture?page=new
+- https 200 OK ✅
+< H: X-Istio-Vs: prismic-cms-vs-delegate
+< H: Hz-Serverid: prismic-cms-main-master20250224173337d93640525b-c58d8bff8-54gtb
 ```
