@@ -8,6 +8,10 @@ STG_HOUZZ_USER
 STG_HOUZZ_PASS
 ```
 
+# Install
+
+[Find the latest release here](https://github.com/tsny-houzz/hurl/releases) and put the binary in your `PATH`
+
 # Usage
 
 ```
