@@ -12,13 +12,13 @@ STG_HOUZZ_PASS
 
 ```
 NAME:
-   hurl - Curl substitute for stghouzz routing and testing
+   hurl - (houzz-curl) Curl substitute for stghouzz routing and testing
 
 USAGE:
    EXAMPLE: hurl -b -c codespace=tsny http://prismic-cms-main.stghouzz.stg-main-eks.stghouzz.com/prismic-cms
 
 DESCRIPTION:
-   Basic auth is handled by env vars STG_HOUZZ_USER and STG_HOUZZ_PASS
+   stghouzz requires basic http auth, this app handles those via env vars STG_HOUZZ_USER and STG_HOUZZ_PASS
 
 COMMANDS:
    help, h  Shows a list of commands or help for one command
@@ -29,7 +29,7 @@ GLOBAL OPTIONS:
    -b          Whether to print the final response body to stdout
    -v          Verbose
    --no-auth   Don't use basic auth with env vars: STG_HOUZZ_USER and STG_HOUZZ_PASS
-   --mc        Mimic chrome with apple webkit headers
+   --mc        Mimic a browser user-agent
    --help, -h  show help
 
 ---
